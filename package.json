@@ -1,0 +1,15 @@
+{
+  "name": "srms",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:backend": "npm --workspace backend run dev",
+    "build:backend": "npm --workspace backend run build",
+    "start:backend": "npm --workspace backend run start"
+  }
+}

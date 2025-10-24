@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  teacher
+  parent
+  student
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+}
+
+enum AttendanceStatus {
+  Present
+  Absent
+  Late
+  Excused
+}
+
+enum DayOfWeek {
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+  Sunday
+}
+
+model User {
+  user_id      Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  email        String    @unique @db.VarChar(150)
+  password     String    @db.VarChar(255)
+  role         Role      @default(teacher)
+  is_active    Boolean   @default(true)
+  created_at   DateTime  @default(now())
+  last_login   DateTime?
+  metadata     Json?
+
+  classes      Class[]   @relation("HomeroomTeacher")
+  locations    Location[]
+  attendanceRecorded Attendance[] @relation("RecordedBy")
+  feedbacks    Feedback[] @relation("TeacherFeedback")
+  timetables   Timetable[]
+}
+
+model Class {
+  class_id     Int       @id @default(autoincrement())
+  name         String    @db.VarChar(50)
+  year         Int?
+  stream       String?   @db.VarChar(50)
+  teacher_id   Int?
+  created_at   DateTime  @default(now())
+
+  homeroomTeacher User?  @relation("HomeroomTeacher", fields: [teacher_id], references: [user_id])
+  students     Student[]
+  subjects     Subject[]
+  assessments  Assessment[]
+  timetable    Timetable[]
+
+  @@unique([name, year, stream])
+}
+
+model Student {
+  student_id     Int       @id @default(autoincrement())
+  admission_no   String?   @unique @db.VarChar(50)
+  first_name     String    @db.VarChar(100)
+  last_name      String?   @db.VarChar(100)
+  gender         Gender?
+  dob            DateTime?
+  class_id       Int?
+  photo_path     String?   @db.VarChar(255)
+  parent_contact String?   @db.VarChar(20)
+  parent_email   String?   @db.VarChar(150)
+  address        String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  class          Class?    @relation(fields: [class_id], references: [class_id])
+  marks          Mark[]
+  attendance     Attendance[]
+  feedbacks      Feedback[]
+
+  @@index([class_id])
+}
+
+model Subject {
+  subject_id   Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  code         String?   @db.VarChar(20)
+  class_id     Int?
+  created_at   DateTime  @default(now())
+
+  class        Class?    @relation(fields: [class_id], references: [class_id])
+  marks        Mark[]
+  timetable    Timetable[]
+
+  @@index([name])
+}
+
+model Assessment {
+  assessment_id Int       @id @default(autoincrement())
+  name          String    @db.VarChar(100)
+  term          String    @db.VarChar(50)
+  weight        Decimal   @default(100) @db.Decimal(5, 2)
+  date          DateTime?
+  class_id      Int?
+
+  class         Class?    @relation(fields: [class_id], references: [class_id])
+  marks         Mark[]
+}
+
+model Mark {
+  mark_id       Int       @id @default(autoincrement())
+  student_id    Int
+  subject_id    Int
+  assessment_id Int
+  score         Decimal   @db.Decimal(6, 2)
+  grade         String?   @db.VarChar(4)
+  comment       String?
+  created_at    DateTime  @default(now())
+
+  student       Student   @relation(fields: [student_id], references: [student_id])
+  subject       Subject   @relation(fields: [subject_id], references: [subject_id])
+  assessment    Assessment @relation(fields: [assessment_id], references: [assessment_id])
+
+  @@unique([student_id, subject_id, assessment_id])
+}
+
+model Attendance {
+  attendance_id Int       @id @default(autoincrement())
+  student_id    Int
+  date          DateTime
+  status        AttendanceStatus @default(Present)
+  recorded_by   Int?
+  note          String?
+  class_id      Int?
+
+  student       Student   @relation(fields: [student_id], references: [student_id])
+  recordedBy    User?     @relation("RecordedBy", fields: [recorded_by], references: [user_id])
+
+  @@index([date, class_id])
+}
+
+model Timetable {
+  timetable_id Int       @id @default(autoincrement())
+  class_id     Int
+  subject_id   Int
+  teacher_id   Int
+  day          DayOfWeek
+  start_time   String    @db.Time(0)
+  end_time     String    @db.Time(0)
+  room         String?   @db.VarChar(50)
+  created_at   DateTime  @default(now())
+
+  class        Class     @relation(fields: [class_id], references: [class_id])
+  subject      Subject   @relation(fields: [subject_id], references: [subject_id])
+  teacher      User      @relation(fields: [teacher_id], references: [user_id])
+
+  @@unique([class_id, day, start_time])
+}
+
+model Location {
+  loc_id     Int      @id @default(autoincrement())
+  user_id    Int
+  latitude   Decimal  @db.Decimal(10, 8)
+  longitude  Decimal  @db.Decimal(11, 8)
+  accuracy   Float?
+  device_info String?  @db.VarChar(255)
+  timestamp  DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id, timestamp])
+}
+
+model Feedback {
+  feedback_id Int      @id @default(autoincrement())
+  student_id  Int
+  teacher_id  Int
+  term        String   @db.VarChar(50)
+  comment     String?
+  rating      Int?
+  created_at  DateTime @default(now())
+
+  student     Student  @relation(fields: [student_id], references: [student_id])
+  teacher     User     @relation("TeacherFeedback", fields: [teacher_id], references: [user_id])
+}

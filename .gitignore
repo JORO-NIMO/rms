@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.DS_Store
+uploads/
+coverage/
+*.log
+.prisma/
+backend/node_modules/
+frontend/node_modules/
