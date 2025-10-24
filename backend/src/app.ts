@@ -37,8 +37,12 @@ app.use(
 );
 
 const storagePath = process.env.STORAGE_PATH || path.join(process.cwd(), 'uploads');
+const tempPath = path.join(storagePath, 'temp');
 if (!fs.existsSync(storagePath)) {
   fs.mkdirSync(storagePath, { recursive: true });
+}
+if (!fs.existsSync(tempPath)) {
+  fs.mkdirSync(tempPath, { recursive: true });
 }
 app.use('/uploads', express.static(storagePath));
 

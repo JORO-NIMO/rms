@@ -27,14 +27,14 @@ enum AttendanceStatus {
   Excused
 }
 
-enum DayOfWeek {
-  Monday
-  Tuesday
-  Wednesday
-  Thursday
-  Friday
-  Saturday
-  Sunday
+model School {
+  school_id Int       @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  code      String    @unique @db.VarChar(4)
+  created_at DateTime @default(now())
+
+  users     User[]
+  classes   Class[]
 }
 
 model User {
@@ -44,10 +44,12 @@ model User {
   password     String    @db.VarChar(255)
   role         Role      @default(teacher)
   is_active    Boolean   @default(true)
+  school_id    Int
   created_at   DateTime  @default(now())
   last_login   DateTime?
   metadata     Json?
 
+  school       School    @relation(fields: [school_id], references: [school_id])
   classes      Class[]   @relation("HomeroomTeacher")
   locations    Location[]
   attendanceRecorded Attendance[] @relation("RecordedBy")
@@ -61,15 +63,17 @@ model Class {
   year         Int?
   stream       String?   @db.VarChar(50)
   teacher_id   Int?
+  school_id    Int
   created_at   DateTime  @default(now())
 
+  school       School    @relation(fields: [school_id], references: [school_id])
   homeroomTeacher User?  @relation("HomeroomTeacher", fields: [teacher_id], references: [user_id])
   students     Student[]
   subjects     Subject[]
   assessments  Assessment[]
   timetable    Timetable[]
 
-  @@unique([name, year, stream])
+  @@unique([name, year, stream, school_id])
 }
 
 model Student {
